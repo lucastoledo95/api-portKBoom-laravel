@@ -16,8 +16,7 @@ class ClearInactiveTokens
      */
     private const TOKEN_EXPIRATION = [
         'access-token' => 15,      // 15 minutos
-        'refresh-token' => 10080,  // 7 dias // pensando em colcoar um dia
-        //'api-token' => 60,         // 1 hora // não tem mais
+        'refresh-token' => 2880,  // em MINUTOS -> 2 DIAS
     ];
 
     public function handle(Request $request, Closure $next): Response

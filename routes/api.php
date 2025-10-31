@@ -13,6 +13,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         }
         return $request->user();
     });
+
+    Route::post('auth/clientes/sair', [AuthController::class, 'logout'])->name('auth.clientes.sair');
+
 });
 
 
@@ -21,7 +24,7 @@ Route::prefix('auth/clientes')->name('auth.clientes.')
 ->controller(AuthController::class)->group(function () {
     Route::post('cadastro', 'register')->name('cadastro')->middleware('throttle:6,1');
     Route::post('login', 'login')->name('login')->middleware('throttle:5,1');
-    Route::post('sair', 'logout')->name('sair')->middleware(['throttle:5,1']);
+    Route::post('sair', 'logout')->name('sair')->middleware(['auth:sanctum', 'throttle:5,1']);
     Route::post('refresh-token', 'refreshToken')->name('refreshToken');
 
     // redefinir senha

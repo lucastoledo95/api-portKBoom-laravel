@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Models\User;
-use App\Traits\EncTrait;
+//use App\Traits\EncTrait; removido temporariamente para testar os tokens
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -12,12 +12,13 @@ use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 use App\Http\Controllers\Controller as Controller;
+use Illuminate\Support\Str;
 
 use function Pest\Laravel\json;
 
 class AuthController extends Controller
 {
-    use EncTrait;
+    //  use EncTrait;
     /**
      * Exibe uma lista dos recursos.
      */
@@ -204,19 +205,27 @@ class AuthController extends Controller
                 //, remove todos os tokens devido ao novo login
                 $user->tokens()->delete();
 
-                $accessToken = $user->createToken('access-token', ['post:read'], now()->addMinutes(15))->plainTextToken;
-                $refreshToken = $user->createToken('refresh-token', ['refresh'], now()->addDays(7))->plainTextToken;
+                //  $accessToken = $user->createToken('access-token', ['post:read'], now()->addMinutes(15))->plainTextToken;
+                // $refreshToken = $user->createToken('refresh-token', ['refresh'], now()->addDays(7))->plainTextToken;
+                // sem criptagrafia
+                $accessToken = $user->createToken('access-token', ['*'], now()->addMinutes(15))->plainTextToken;
+                $refreshToken = $user->createToken('refresh-token', ['*'], now()->addDays(2))->plainTextToken;
+
+                //                $accessToken = $user->createToken('access-token', ['*'], now()->addMinutes(15))->plainTextToken;
+                //                $refreshToken = $user->createToken('refresh-token', ['*'], now()->addDays(7))->plainTextToken;
+
+                $apiDomain = parse_url(config('app.url'), PHP_URL_HOST);
 
                 return response()->json([
                     'ok' => true,
-                    'access_token' => $this->encriptado($accessToken),
-                    'expires_in' => 15 * 60, // 15minutos, expira token
+                    'access_token' => $accessToken,
+                    'expires_in' => 15 * 60
                 ])->cookie(
                     'refresh_token',
-                    $this->encriptado($refreshToken),
-                    7 * 24 * 60, // 7 dias, pensando em colocar 1 dia.
+                    $refreshToken,
+                    2 * 24 * 60, // 2 dia
                     '/', // path
-                    null, // domínio
+                    $apiDomain, // domínio
                     true, // Secure , em https... - necessario devido a questão de envio de cookies
                     true,  // HttpOnly
                     false, // raw
@@ -231,6 +240,57 @@ class AuthController extends Controller
         }
     }
 
+
+    public function refreshToken(Request $request)
+    {
+        $refreshToken = $request->cookie('refresh_token');
+
+        if (!$refreshToken) {
+            return response()->json(['ok' => false, 'message' => 'Sessão não encontrada.'], 401);
+        }
+
+        // Valida o refresh token no banco de dados
+        $token = PersonalAccessToken::findToken($refreshToken);
+
+        if (!$token) {
+            return response()->json(['ok' => false, 'message' => 'Sessão inválida.'], 401);
+        }
+
+        // pega o user do token
+        $user = $token->tokenable;
+
+        // Revoga o access token antigo para evitar que ele seja usado
+        $user->tokens()->where('name', 'access-token')->delete();
+
+        // Gera um novo access token
+        $newAccessToken = $user->createToken('access-token', ['*'], now()->addMinutes(15))->plainTextToken;
+
+        return response()->json([
+            'ok' => true,
+            'access_token' => $newAccessToken, // <-- Envie o novo token original
+            'expires_in' => 15 * 60
+        ]);
+    }
+    public function logout(Request $request)
+    {
+        try {
+            $user = $request->user(); // Autenticado via Bearer Token
+
+            // Revoga todos os tokens do usuário (access e refresh)
+            $user->tokens()->delete();
+
+            // Expira o cookie do refresh_token no navegador
+            return response()->json([
+                'ok' => true,
+                'message' => 'Logout realizado com sucesso'
+            ])->withoutCookie('refresh_token');
+
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'message' => 'Nenhuma sessão ativa para encerrar.'])
+                   ->withoutCookie('refresh_token');
+        }
+    }
+    /* refreshtoken antigo quando estava usando criptografia nos tokens
     public function refreshToken(Request $request)
     {
         $refreshToken = $request->cookie('refresh_token');
@@ -327,6 +387,9 @@ class AuthController extends Controller
             );
         }
     }
+         */
+
+
     /**
      * Exibe o recurso especificado.
      */

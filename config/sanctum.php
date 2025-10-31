@@ -18,9 +18,13 @@ return [
     'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
         '%s%s',
         'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
-        'portkboomfront.test:8090',
-        'localhost.test:8090',
-        'api-portkboom.test'.
+        'app.portkboom.localhost:8090',
+        'https://app.portkboom.localhost:8090',
+        'https://app.portkboom.localhost',
+        'https://portkboom.localhost/',
+        'app.portkboom.localhost',
+        'localhost.localhost:8090',
+        'api.portkboom.localhost'.
         '127.0.0.1:8090',
         // dominio produção
         Sanctum::currentApplicationUrlWithPort(),

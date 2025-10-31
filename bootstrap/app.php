@@ -20,7 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prependToGroup('api', [
             ForceJsonResponse::class,
             ClearInactiveTokens::class,
-            EncDescriptograrToken::class,
+           // EncDescriptograrToken::class,
             ForceHttps::class,
         ]);
     })

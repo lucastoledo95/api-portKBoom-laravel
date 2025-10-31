@@ -15,13 +15,13 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout'],
 
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-            'https://portkboomfront.test:8090',
-            'https://portkboom-front.test',
+           'https://app.portkboom.localhost:8090',
+    'https://portkboom.localhost',
        //  dominio produção
     ],
 
@@ -33,6 +33,6 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => true,
+    'supports_credentials' => true, 
 
 ];
