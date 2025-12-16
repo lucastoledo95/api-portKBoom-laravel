@@ -215,15 +215,19 @@ class AuthController extends Controller
                 //                $refreshToken = $user->createToken('refresh-token', ['*'], now()->addDays(7))->plainTextToken;
 
                 $apiDomain = parse_url(config('app.url'), PHP_URL_HOST);
+                $SECOND = 1;
+                $MINUTE = 60 * $SECOND;
+                $HOUR   = 60 * $MINUTE;
+                $DAY    = 24 * $HOUR;
 
                 return response()->json([
                     'ok' => true,
                     'access_token' => $accessToken,
-                    'expires_in' => 15 * 60
+                    'expires_in' => 15 * $MINUTE // 15minutos - token sempre reatualiza 1min antes pelo frontend
                 ])->cookie(
                     'refresh_token',
                     $refreshToken,
-                    2 * 24 * 60, // 2 dia
+                    2 * $DAY, // 2 dia
                     '/', // path
                     $apiDomain, // domínio
                     true, // Secure , em https... - necessario devido a questão de envio de cookies
@@ -265,10 +269,14 @@ class AuthController extends Controller
         // Gera um novo access token
         $newAccessToken = $user->createToken('access-token', ['*'], now()->addMinutes(15))->plainTextToken;
 
+        $SECOND = 1;
+        $MINUTE = 60 * $SECOND;
+
+
         return response()->json([
             'ok' => true,
             'access_token' => $newAccessToken, // <-- envia novo token
-            'expires_in' => 15 * 60
+            'expires_in' => 15 * $MINUTE
         ]);
     }
     public function logout(Request $request)
