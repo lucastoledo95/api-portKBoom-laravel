@@ -267,7 +267,7 @@ class AuthController extends Controller
 
         return response()->json([
             'ok' => true,
-            'access_token' => $newAccessToken, // <-- Envie o novo token original
+            'access_token' => $newAccessToken, // <-- envia novo token
             'expires_in' => 15 * 60
         ]);
     }
@@ -280,14 +280,43 @@ class AuthController extends Controller
             $user->tokens()->delete();
 
             // Expira o cookie do refresh_token no navegador
+            $apiDomain = parse_url(config('app.url'), PHP_URL_HOST);
+
             return response()->json([
                 'ok' => true,
-                'message' => 'Logout realizado com sucesso'
-            ])->withoutCookie('refresh_token');
+                'message' => 'Logout realizado'
+            ])->cookie(
+                'refresh_token',
+                'deleted',
+                1000,
+                '/', // path
+                $apiDomain, // domínio
+                true, // Secure , em https... - necessario devido a questão de envio de cookies
+                true,  // HttpOnly
+                false, // raw
+                'None'  // same site // necessario para dominios diferentes
+            );
 
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => 'Nenhuma sessão ativa para encerrar.'])
-                   ->withoutCookie('refresh_token');
+
+            $apiDomain = parse_url(config('app.url'), PHP_URL_HOST);
+
+            return response()->json([
+                'ok' => false,
+                'message' => 'Nenhuma sessão ativa para encerrar'
+            ])->cookie(
+                'refresh_token',
+                'deleted',
+                1000,
+                '/', // path
+                $apiDomain, // domínio
+                true, // Secure , em https... - necessario devido a questão de envio de cookies
+                true,  // HttpOnly
+                false, // raw
+                'None'  // same site // necessario para dominios diferentes
+            );
+
+
         }
     }
     /* refreshtoken antigo quando estava usando criptografia nos tokens
