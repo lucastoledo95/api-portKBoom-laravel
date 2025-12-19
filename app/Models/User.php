@@ -29,6 +29,7 @@ class User extends Authenticatable
         'cpf_cnpj',
         'inscricao_estadual',
         'telefone',
+        'data_nascimento',
         'profile_photo_path',
     ];
 
@@ -64,6 +65,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'data_nascimento' => 'date:d-m-Y',
         ];
     }
 

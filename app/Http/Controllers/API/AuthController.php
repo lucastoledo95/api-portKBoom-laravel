@@ -38,7 +38,7 @@ class AuthController extends Controller
         // Remover caracteres não numéricos antes de validar
         $input['cpf_cnpj'] = preg_replace('/\D/', '', $input['cpf_cnpj'] ?? '');
         $input['telefone'] = preg_replace('/\D/', '', $input['telefone'] ?? '');
-
+        $input['data_nascimento'] = $input['data_nascimento'] ?? null;
         $input['name'] = strtoupper($input['name'] ?? '');
         $input['email'] = strtolower($input['email'] ?? '');
         $input['tipo_pessoa'] = strtolower($input['tipo_pessoa'] ?? '');
@@ -51,6 +51,7 @@ class AuthController extends Controller
             'tipo_pessoa' => 'Tipo de Pessoa',
             'telefone' => 'Telefone',
             'inscricao_estadual' => 'Inscrição Estadual',
+            'data_nascimento' => 'Data de Nascimento',
         ];
         $input['tipo_pessoa'] = strtolower($input['tipo_pessoa'] ?? 'pf');
 
@@ -78,6 +79,12 @@ class AuthController extends Controller
                 ],
             'telefone' => ['required', 'string', 'regex:/^\(?\d{2}\)?[\s-]?\d{4,5}-?\d{4}$/'],
             'inscricao_estadual' => ['nullable', 'string', 'max:30', 'regex:/^\d+$/', 'min:9'],
+            'data_nascimento' => [
+                'required_if:tipo_pessoa,pf',
+                'nullable',
+                'date',
+                'regex:/^\d{2}-\d{2}-\d{4}$/', // formato DD-MM-AAAA
+            ],
         ],
             [
             'required' => 'O campo :attribute é obrigatório.',
@@ -99,10 +106,17 @@ class AuthController extends Controller
             'cpf_cnpj.unique' => 'Este :attribute já existe cadastrado.',
             'tipo_pessoa.in' => 'O :attribute deve ser PF ou PJ.',
             'telefone.regex' => 'O :attribute informado não é válido.',
+
             'inscricao_estadual.regex' => 'O campo :attribute deve conter apenas números.',
+
+            'data_nascimento.required_if' => 'A :attribute é obrigatória para Pessoas Físicas.',
+            'data_nascimento.date' => 'A :attribute deve ser uma data válida.',
+            'data_nascimento.regex' => 'A :attribute deve estar no formato DD-MM-AAAA.',
         ],
             $atributos
         );
+
+
 
         if ($validated->fails()) {
             return response()->json([
@@ -111,6 +125,12 @@ class AuthController extends Controller
             ], 422);
         }
         $validated = $validated->validated(); // validação
+
+
+        if (!empty($validated['data_nascimento'])) {
+            $validated['data_nascimento'] = \Carbon\Carbon::createFromFormat('d-m-Y', $validated['data_nascimento'])
+            ->format('Y-m-d');
+        }
 
         try {
             // criar usuario
@@ -122,6 +142,7 @@ class AuthController extends Controller
                 'cpf_cnpj' => $validated['cpf_cnpj'],
                 'telefone' => $validated['telefone'],
                 'inscricao_estadual' => $validated['inscricao_estadual'] ?? null,
+                 'data_nascimento' => $validated['data_nascimento'] ?? null,
             ]);
 
             // forçar login após cadastro
