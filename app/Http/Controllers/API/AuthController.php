@@ -35,6 +35,14 @@ class AuthController extends Controller
     {
         $input = $request->all(); // data
 
+        $recaptcha = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+            'secret' => env('RECAPTCHA_SECRET_KEY'),
+            'response' => $request->recaptcha_token,
+        ])->json();
+
+        if (!($recaptcha['success'] ?? false)) {
+            return response()->json([ 'ok' => false, 'message' => 'Falha na verificação do reCAPTCHA.' ], 422);
+        }
         // Remover caracteres não numéricos antes de validar
         $input['cpf_cnpj'] = preg_replace('/\D/', '', $input['cpf_cnpj'] ?? '');
         $input['telefone'] = preg_replace('/\D/', '', $input['telefone'] ?? '');
@@ -149,6 +157,7 @@ class AuthController extends Controller
             $loginRequest = new Request([
                 'login' => $validated['email'],
                 'password' => $input['password'],
+                'internal_login' => true
             ]);
 
             return $this->login($loginRequest);
@@ -162,12 +171,20 @@ class AuthController extends Controller
     public function login(Request $request)
     {
 
-        /*    $recapchaTokenVerificado = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+
+
+        if (!($request->internal_login ?? false)) { // se login vier do register não verifico o RECAPTCHA, caso venha da API eu verifico.
+            // valida recaptcha
+            $recapchaTokenVerificado = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
                 'secret' => env('RECAPTCHA_SECRET_KEY'),
                 'response' => $request->recaptcha_token,
             ]);
             $recapchaTokenVerificado = $recapchaTokenVerificado->json();
-        // preciso implementar o captcha ainda */
+
+            if (!($recapchaTokenVerificado['success'] ?? false)) {
+                return response()->json(['ok' => false, 'message' => 'Falha na verificação reCAPTCHA.'], 422);
+            }
+        }
 
         $input = $request->all();
         $validator = Validator::make($input, [
@@ -212,10 +229,9 @@ class AuthController extends Controller
                 $credentials['cpf_cnpj'] = $apenasNumeros;
             }
 
-            /*  if (!($recapchaTokenVerificado['success'] ?? false)) { // implementar ainda
-                  response()->json(['ok' => false, 'message' => 'Falha na verificação reCAPTCHA.'], 422);
-              }
-            */
+
+
+
 
 
             if (Auth::attempt($credentials)) {
