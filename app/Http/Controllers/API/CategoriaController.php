@@ -76,6 +76,12 @@ class CategoriaController extends Controller
                 return response()->json(['ok' => false,'message' => 'Categoria não encontrada.',], 404);
             }
         }
+
+
+        // gera os filhos
+        $categoria = $this->getChildrensParents($categoria);
+
+
         return response()->json(['ok' => true, 'categorias' => $categoria], 200);
     }
 
